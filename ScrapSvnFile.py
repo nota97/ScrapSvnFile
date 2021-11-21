@@ -1,6 +1,7 @@
 import os
 import requests
 from lxml import etree
+import ConfigMsg
 import urllib3
 
 
@@ -22,6 +23,19 @@ class ScrapSvnFile():
         print(url)
         return url
 
+    def file_save_path(self, url):
+        f_path = str(url).split("/doc", 1)[1]
+        f_path = f_path.replace("/", "\\")
+        fs_path = ConfigMsg.file_local + f_path
+        print(fs_path)
+        return fs_path
+
+    def download_file(self, url):
+        d_file = requests.get(url)
+        fs_path = self.file_save_path(url)
+        with open(fs_path,"wb") as file:
+            file.write(d_file.content)
+
     def Get_svnfile(self, url):
         filedownloadurl=[]
         headers = {
@@ -36,7 +50,9 @@ class ScrapSvnFile():
             # dir_lst= element.xpath('//file')
             for i in file_lst:
                 # print(i.attrib["name"])
-                filedownloadurl.append(url+str(i.attrib["name"]))
+                href = url+str(i.attrib["name"])
+                self.download_file(href)
+                filedownloadurl.append(href)
             print(filedownloadurl)
             return filedownloadurl
         for i in dir_lst:
@@ -46,6 +62,7 @@ class ScrapSvnFile():
             self.Get_svnfile(url+href+"/")
         for j in file_lst:
             href = str(j.attrib["name"])
+            self.download_file(href)
             print(url+href)
 
 
@@ -56,5 +73,5 @@ class ScrapSvnFile():
 
 
 # url="https://192.168.10.201/svn/doc/QA测试/"
-a = ScrapSvnFile("xuxb","Justsy123","https://192.168.10.201/svn/doc/QA测试/QA测试文档梳理/02 项目/J 建信金科/")
+a = ScrapSvnFile("xuxb", "Justsy123", "https://192.168.10.201/svn/doc/QA测试/QA测试文档梳理/02 项目/J 建信金科/")
 a.Run_scrapsvnfile()
