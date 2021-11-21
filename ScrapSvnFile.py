@@ -32,7 +32,7 @@ class ScrapSvnFile():
         element = etree.HTML(html)
         dir_lst = element.xpath('//dir')
         file_lst = element.xpath('//file')
-        if len(dir_lst)== 0:
+        if len(dir_lst) == 0:
             # dir_lst= element.xpath('//file')
             for i in file_lst:
                 # print(i.attrib["name"])
