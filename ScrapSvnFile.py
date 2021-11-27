@@ -1,3 +1,4 @@
+import hashlib
 import os
 import requests
 from lxml import etree
@@ -52,7 +53,8 @@ class ScrapSvnFile():
 
     def save_msg_in_lst(self, name, parent_path, url):
         ctime = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        msg_lst = tuple([name, parent_path, url, ctime])
+        file_md5 = hashlib.md5(url.encode('utf-8')).hexdigest()
+        msg_lst = tuple([name, parent_path, file_md5, url, ctime])
         return msg_lst
 
     def Get_svnfile(self, url):

@@ -26,7 +26,7 @@ class SaveMsgInSql():
 
     def conn_save_msg(self, data):
         try:
-            sql = " INSERT INTO test_save_filedata(name,parent_path,download_url,create_date) VALUES(%s,%s,%s,%s) "
+            sql = " INSERT INTO test_save_filedata(name, parent_path, url_md5, download_url,create_date) VALUES(%s,%s,%s,%s,%s) "
             self.conn_sql()
             self.cur.executemany(sql, data)
             self.conn.commit()
