@@ -96,9 +96,23 @@ class ScrapSvnFile():
         self.Get_svnfile(self.url)
         print("..................finish ..................")
         print("..................INSERT INTO SQL..................")
-        svndata = self.totalfileurllst
-        a = SaveMsgInSql.SaveMsgInSql()
-        a.conn_save_msg(svndata)
+        add_svn_data = []
+        delete_sql_data = []
+        svn_data = self.totalfileurllst
+        sql_msg = SaveMsgInSql.SaveMsgInSql()
+        #获取原有数据
+        original_data = sql_msg.conn_get_msg()
+        for i in svn_data:
+            if i[2] not in original_data:
+                add_svn_data.append(i)
+        for j in original_data:
+            if j not in svn_data:
+                delete_sql_data.append(j)
+
+        #增量插入数据库
+        sql_msg.conn_save_msg(tuple(add_svn_data))
+        #删除多余数据
+        sql_msg.conn_delete_msg(tuple(delete_sql_data))
         finish_time = time.time()
         print("..................INSERT FINISH..................")
         print(finish_time - start_time)

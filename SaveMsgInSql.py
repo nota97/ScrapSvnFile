@@ -15,13 +15,10 @@ class SaveMsgInSql():
         self.cur = self.conn.cursor()
 
     def conn_get_msg(self):
-        sql = "SELECT * FROM test_save_filedata"
+        sql = "SELECT url_md5 FROM test_save_filedata"
         self.conn_sql()
         self.cur.execute(sql)
-        results = self.cur.fetchall()
-        # results = list(results)
-        for i in results:
-            print(i)
+        results = list(self.cur.fetchall())
         return results
 
     def conn_save_msg(self, data):
@@ -35,7 +32,16 @@ class SaveMsgInSql():
         finally:
             self.conn_close()
 
-        pass
+    def conn_delete_msg(self, data):
+        try:
+            sql = "DELETE FROM test_save_filedata WHERE url_md5 = %s"
+            self.conn_sql()
+            self.cur.executemany(sql, data)
+            self.conn.commit()
+        except Exception as e:
+            print(e)
+        finally:
+            self.conn_close()
 
     def conn_close(self):
         self.cur.close()
