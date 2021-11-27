@@ -18,8 +18,11 @@ class SaveMsgInSql():
         sql = "SELECT url_md5 FROM test_save_filedata"
         self.conn_sql()
         self.cur.execute(sql)
-        results = list(self.cur.fetchall())
-        return results
+        results = self.cur.fetchall()
+        md5_lst = []
+        for i in results:
+            md5_lst.append(i[0])
+        return md5_lst
 
     def conn_save_msg(self, data):
         try:

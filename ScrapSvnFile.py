@@ -19,6 +19,7 @@ class ScrapSvnFile():
         self.password = password
         self.url = self.deal_url(url)
         self.totalfileurllst = []
+        self.filemd5lst = []
 
     def deal_url(self, url):
         login_msg = str(self.username) + ":" + str(self.password) + "@"
@@ -54,6 +55,7 @@ class ScrapSvnFile():
     def save_msg_in_lst(self, name, parent_path, url):
         ctime = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         file_md5 = hashlib.md5(url.encode('utf-8')).hexdigest()
+        self.filemd5lst.append(file_md5)
         msg_lst = tuple([name, parent_path, file_md5, url, ctime])
         return msg_lst
 
@@ -102,13 +104,15 @@ class ScrapSvnFile():
         sql_msg = SaveMsgInSql.SaveMsgInSql()
         #获取原有数据
         original_data = sql_msg.conn_get_msg()
+        print(original_data)
         for i in svn_data:
             if i[2] not in original_data:
                 add_svn_data.append(i)
         for j in original_data:
-            if j not in svn_data:
+            if j not in self.filemd5lst:
                 delete_sql_data.append(j)
-
+        print("add++++++",add_svn_data)
+        print("del------",delete_sql_data)
         #增量插入数据库
         sql_msg.conn_save_msg(tuple(add_svn_data))
         #删除多余数据
@@ -119,5 +123,5 @@ class ScrapSvnFile():
 
 
 # url="https://192.168.10.201/svn/doc/QA测试/"
-a = ScrapSvnFile("xuxb", "Justsy123", "https://192.168.10.201/svn/doc/QA测试/QA测试文档梳理/02 项目/J 建信金科/H 恒丰银行/")
+a = ScrapSvnFile("xuxb", "Justsy123", "https://192.168.10.201/svn/doc/QA测试/")
 a.Run_scrapsvnfile()
