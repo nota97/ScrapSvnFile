@@ -1,5 +1,7 @@
 import hashlib
 import os
+import threading
+
 import requests
 from lxml import etree
 import ConfigMsg
@@ -21,7 +23,6 @@ class ScrapSvnFile():
         self.password = password
         self.url = self.deal_url(url)
         self.totalfileurllst = []
-        self.filemd5lst = []
         self.file_queue = Queue()
 
     #处理url，加入用户名及密码
@@ -62,9 +63,38 @@ class ScrapSvnFile():
     def save_msg_in_lst(self, name, parent_path, url):
         ctime = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         file_md5 = hashlib.md5(url.encode('utf-8')).hexdigest()
-        self.filemd5lst.append(file_md5)
+        # self.filemd5lst.append(file_md5)
         msg_lst = tuple([name, parent_path, file_md5, url, ctime])
         return msg_lst
+
+    #根据深度获取SVN文件夹URL
+    def Get_svn_dir_url(self, url, depth=1):
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.119 Safari/537.36"}
+        requests.packages.urllib3.disable_warnings()
+        response = requests.get(url, headers=headers, verify=False)
+        html = response.content.decode()
+        element = etree.HTML(html)
+        dir_lst = element.xpath('//dir')
+        file_lst = element.xpath('//file')
+        if len(dir_lst) == 0:
+            for i in file_lst:
+                name = i.attrib["name"]
+                href = url + name
+                parent_path = str(url).split("/doc", 1)[1]
+                self.totalfileurllst.append(self.save_msg_in_lst(name, parent_path, href))
+            return 0
+        for i in dir_lst:
+            href = str(i.attrib["name"])
+            if depth < 3:
+                self.Get_svn_dir_url(url+href+"/", depth+1)
+            else:
+                self.file_queue.put(url+href+"/")
+        for j in file_lst:
+            name = str(j.attrib["name"])
+            href = url + name
+            parent_path = str(url).split("/doc", 1)[1]
+            self.totalfileurllst.append(self.save_msg_in_lst(name, parent_path, href))
 
     #根据URL递归爬出文件
     def Get_svnfile(self, url):
@@ -103,16 +133,26 @@ class ScrapSvnFile():
     def Run_scrapsvnfile(self):
         start_time = time.time()
         print(".............start getsvnfile.............")
-        self.Get_svnfile(self.url)
+        self.Get_svn_dir_url(self.url)
+        thread_lst = []
+        while not self.file_queue.empty():
+            v = threading.Thread(target=self.Get_svnfile, args=(self.file_queue.get(),))
+            v.start()
+            thread_lst.append(v)
+        for i in thread_lst:
+            i.join()
+        # self.Get_svnfile(self.url)
         print("..................finish ..................")
         print("Spider Time:"+str(time.time() - start_time))
         print("..................INSERT INTO SQL..................")
         add_svn_data = []
-        delete_sql_data = []
         svn_data = self.totalfileurllst
+        print(len(svn_data))
         sql_msg = SaveMsgInSql.SaveMsgInSql()
         #获取原有数据
-        original_data = sql_msg.conn_get_msg()
+        path = str(self.url).split("/doc", 1)[1]
+        print(path)
+        original_data = sql_msg.conn_get_msg(path)
         # print(original_data)
         #数据处理判断新爬出数据是否在数据库中，不存在则保存至add_svn_data
         for i in svn_data:
@@ -137,5 +177,6 @@ class ScrapSvnFile():
 
 
 # url="https://192.168.10.201/svn/doc/QA测试/"
-a = ScrapSvnFile("xuxb", "Justsy123", "https://192.168.10.201/svn/doc/QA测试/")
-a.Run_scrapsvnfile()
+if __name__ == '__main__':
+    a = ScrapSvnFile("xuxb", "Justsy123", "https://192.168.10.201/svn/doc/QA测试/")
+    a.Run_scrapsvnfile()

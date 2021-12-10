@@ -16,8 +16,8 @@ class SaveMsgInSql():
         self.cur = self.conn.cursor()
 
     #获取数据库中所有url_md5值的数据，并保存为list
-    def conn_get_msg(self):
-        sql = "SELECT url_md5 FROM test_save_filedata"
+    def conn_get_msg(self, path):
+        sql = "SELECT url_md5 FROM test_save_filedata where parent_path LIKE '%" + path + "%';"
         self.conn_sql()
         self.cur.execute(sql)
         results = self.cur.fetchall()
