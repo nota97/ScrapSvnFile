@@ -1,6 +1,7 @@
 import pymysql
 import ConfigMsg
 
+
 class SaveMsgInSql():
     def __init__(self):
         self.host = ConfigMsg.host
@@ -14,6 +15,7 @@ class SaveMsgInSql():
         self.conn = pymysql.connect(host=self.host, user=self.username, password=self.password, database=self.database)
         self.cur = self.conn.cursor()
 
+    #获取数据库中所有url_md5值的数据，并保存为list
     def conn_get_msg(self):
         sql = "SELECT url_md5 FROM test_save_filedata"
         self.conn_sql()
@@ -24,6 +26,7 @@ class SaveMsgInSql():
             md5_lst.append(i[0])
         return md5_lst
 
+    #批量插入数据至数据库
     def conn_save_msg(self, data):
         try:
             sql = " INSERT INTO test_save_filedata(name, parent_path, url_md5, download_url,create_date) VALUES(%s,%s,%s,%s,%s) "
@@ -35,6 +38,7 @@ class SaveMsgInSql():
         finally:
             self.conn_close()
 
+    #批量从数据库中删除数据
     def conn_delete_msg(self, data):
         try:
             sql = "DELETE FROM test_save_filedata WHERE url_md5 = %s"
@@ -49,6 +53,7 @@ class SaveMsgInSql():
     def conn_close(self):
         self.cur.close()
         self.conn.close()
+
 
 
 
