@@ -16,8 +16,9 @@ class SaveMsgInSql():
         self.cur = self.conn.cursor()
 
     #获取数据库中所有url_md5值的数据，并保存为list
-    def conn_get_msg(self, path):
-        sql = "SELECT url_md5 FROM test_save_filedata where parent_path LIKE '%" + path + "%';"
+    def conn_get_msg(self, path, svn_type):
+        sql = "SELECT url_md5 FROM test_save_filedata where parent_path LIKE '%" + path + "%'"+" and type = '"\
+              + svn_type + "';"
         self.conn_sql()
         self.cur.execute(sql)
         results = self.cur.fetchall()
@@ -29,7 +30,7 @@ class SaveMsgInSql():
     #批量插入数据至数据库
     def conn_save_msg(self, data):
         try:
-            sql = " INSERT INTO test_save_filedata(name, parent_path, url_md5, download_url,create_date) VALUES(%s,%s,%s,%s,%s) "
+            sql = " INSERT INTO test_save_filedata(name, parent_path, url_md5, download_url,create_date,type) VALUES(%s,%s,%s,%s,%s,%s) "
             self.conn_sql()
             self.cur.executemany(sql, data)
             self.conn.commit()

@@ -24,6 +24,7 @@ class ScrapSvnFile():
         self.url = self.deal_url(url)
         self.totalfileurllst = []
         self.file_queue = Queue()
+        self.svn_type = ""
 
     #处理url，加入用户名及密码
     def deal_url(self, url):
@@ -33,6 +34,16 @@ class ScrapSvnFile():
         url = font_url + "//" + login_msg + back_url
         print(url)
         return url
+
+    def deal_svn_type(self, url):
+        if "dev-doc" in url:
+            self.svn_type = "功能设计"
+        elif "pd-doc" in url:
+            self.svn_type = "需求文档"
+        elif "QA" in url:
+            self.svn_type = "QA文档"
+        else:
+            self.svn_type = "其他"
 
     #本地生成文件夹路径
     def file_save_path(self, url):
@@ -64,11 +75,12 @@ class ScrapSvnFile():
         ctime = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         file_md5 = hashlib.md5(url.encode('utf-8')).hexdigest()
         # self.filemd5lst.append(file_md5)
-        msg_lst = tuple([name, parent_path, file_md5, url, ctime])
+        msg_lst = tuple([name, parent_path, file_md5, url, ctime, self.svn_type])
         return msg_lst
 
     #根据深度获取SVN文件夹URL
     def Get_svn_dir_url(self, url, depth=1):
+        self.deal_svn_type(url)
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.119 Safari/537.36"}
         requests.packages.urllib3.disable_warnings()
@@ -81,7 +93,7 @@ class ScrapSvnFile():
             for i in file_lst:
                 name = i.attrib["name"]
                 href = url + name
-                parent_path = str(url).split("/doc", 1)[1]
+                parent_path = str(url).split("doc", 1)[1]
                 self.totalfileurllst.append(self.save_msg_in_lst(name, parent_path, href))
             return 0
         for i in dir_lst:
@@ -93,7 +105,7 @@ class ScrapSvnFile():
         for j in file_lst:
             name = str(j.attrib["name"])
             href = url + name
-            parent_path = str(url).split("/doc", 1)[1]
+            parent_path = str(url).split("doc", 1)[1]
             self.totalfileurllst.append(self.save_msg_in_lst(name, parent_path, href))
 
     #根据URL递归爬出文件
@@ -112,7 +124,7 @@ class ScrapSvnFile():
                 # print(i.attrib["name"])
                 name = i.attrib["name"]
                 href = url + name
-                parent_path = str(url).split("/doc", 1)[1]
+                parent_path = str(url).split("doc", 1)[1]
                 self.totalfileurllst.append(self.save_msg_in_lst(name, parent_path, href))
             # print(filedownloadurl)
             return 0
@@ -124,7 +136,7 @@ class ScrapSvnFile():
         for j in file_lst:
             name = str(j.attrib["name"])
             href = url + name
-            parent_path = str(url).split("/doc", 1)[1]
+            parent_path = str(url).split("doc", 1)[1]
             # print(url + href)
             self.totalfileurllst.append(self.save_msg_in_lst(name, parent_path, href))
             # self.download_file(url+href)
@@ -148,12 +160,11 @@ class ScrapSvnFile():
         add_svn_data = []
         svn_data = self.totalfileurllst
         print(len(svn_data))
+        #连接数据库
         sql_msg = SaveMsgInSql.SaveMsgInSql()
-        #获取原有数据
-        path = str(self.url).split("/doc", 1)[1]
-        print(path)
-        original_data = sql_msg.conn_get_msg(path)
-        # print(original_data)
+        path = str(self.url).split("doc", 1)[1]
+        #获取爬取目录下的数据库中数据
+        original_data = sql_msg.conn_get_msg(path, self.svn_type)
         #数据处理判断新爬出数据是否在数据库中，不存在则保存至add_svn_data
         for i in svn_data:
             if i[2] not in original_data:
